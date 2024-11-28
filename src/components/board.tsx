@@ -113,7 +113,6 @@ export const Board = () => {
     }
 
     let activeRowUpdated = false;
-
     setBoardState((prev) =>
       prev.map((row) => {
         // Mark the active row as submitted and update the status of each cell
