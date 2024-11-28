@@ -2,34 +2,33 @@ import { useEffect, useState } from "react";
 import { cn } from "../utils/helpers";
 
 type CellState = {
-  index: number;
   letter: string;
   status: "not-submitted" | "incorrect" | "wrong-spot" | "correct";
 };
 
 type RowState = {
   row: CellState[];
-  status: "unsubmitted" | "active" | "submitted";
+  status: "not-submitted" | "active" | "submitted";
 };
 
 type BoardState = RowState[];
 
 const emptyRow: CellState[] = [
-  { index: 0, letter: "", status: "not-submitted" },
-  { index: 1, letter: "", status: "not-submitted" },
-  { index: 2, letter: "", status: "not-submitted" },
-  { index: 3, letter: "", status: "not-submitted" },
-  { index: 4, letter: "", status: "not-submitted" },
+  { letter: "", status: "not-submitted" },
+  { letter: "", status: "not-submitted" },
+  { letter: "", status: "not-submitted" },
+  { letter: "", status: "not-submitted" },
+  { letter: "", status: "not-submitted" },
 ];
 
 const defaultBoardState: BoardState = [
   {
     row: [
-      { index: 0, letter: "A", status: "correct" },
-      { index: 1, letter: "B", status: "incorrect" },
-      { index: 2, letter: "C", status: "wrong-spot" },
-      { index: 3, letter: "D", status: "incorrect" },
-      { index: 4, letter: "E", status: "correct" },
+      { letter: "A", status: "correct" },
+      { letter: "B", status: "incorrect" },
+      { letter: "C", status: "wrong-spot" },
+      { letter: "D", status: "incorrect" },
+      { letter: "E", status: "correct" },
     ],
     status: "submitted",
   },
@@ -39,19 +38,19 @@ const defaultBoardState: BoardState = [
   },
   {
     row: [...emptyRow],
-    status: "unsubmitted",
+    status: "not-submitted",
   },
   {
     row: [...emptyRow],
-    status: "unsubmitted",
+    status: "not-submitted",
   },
   {
     row: [...emptyRow],
-    status: "unsubmitted",
+    status: "not-submitted",
   },
   {
     row: [...emptyRow],
-    status: "unsubmitted",
+    status: "not-submitted",
   },
 ];
 
@@ -79,6 +78,7 @@ export const Board = () => {
         if (char) {
           if (index === emptyCellIndex) {
             return {
+              ...cell,
               letter: char.toUpperCase(),
               status: "not-submitted",
             } as CellState;
@@ -87,15 +87,60 @@ export const Board = () => {
           // If there are no empty cells, clear the last cell
           if (emptyCellIndex === -1) {
             if (index === activeCellState.length - 1) {
-              return { letter: "", status: "not-submitted" } as CellState;
+              return {
+                ...cell,
+                letter: "",
+                status: "not-submitted",
+              } as CellState;
             }
           } else if (index === emptyCellIndex - 1) {
-            return { letter: "", status: "not-submitted" } as CellState;
+            return {
+              ...cell,
+              letter: "",
+              status: "not-submitted",
+            } as CellState;
           }
         }
         return cell;
       }),
     );
+  };
+
+  const submitAnswer = () => {
+    // Early return if the active row is not filled
+    if (activeCellState.some((cell) => cell.letter === "")) {
+      return;
+    }
+
+    let activeRowUpdated = false;
+
+    setBoardState((prev) =>
+      prev.map((row) => {
+        // Mark the active row as submitted and update the status of each cell
+        if (row.status === "active") {
+          return {
+            row: activeCellState.map((cell) => ({
+              ...cell,
+              status: ["correct", "incorrect", "wrong-spot"][
+                Math.floor(Math.random() * 3)
+              ],
+            })),
+            status: "submitted",
+          } as RowState;
+          // Mark the first not-submitted row as active
+        } else if (row.status === "not-submitted" && !activeRowUpdated) {
+          activeRowUpdated = true;
+          return {
+            ...row,
+            status: "active",
+          } as RowState;
+        }
+        return row;
+      }),
+    );
+
+    // Reset the active cell state
+    setActiveCellState([...emptyRow]);
   };
 
   useEffect(() => {
@@ -106,8 +151,6 @@ export const Board = () => {
       (e) => {
         // Ignore keydown events that are not letters
         if (/^[a-zA-Z]$/.test(e.key)) {
-          e.preventDefault();
-          e.stopPropagation();
           handleInput(e.key);
         }
 
@@ -118,14 +161,18 @@ export const Board = () => {
 
         // Submit the answer when the Enter key is pressed
         if (e.key === "Enter") {
-          console.log("Submitting answer");
+          submitAnswer();
         }
+
+        // Prevent default behavior for all keydown events
+        e.preventDefault();
+        e.stopPropagation();
       },
       { signal: controller.signal },
     );
 
     return () => controller.abort();
-  }, [handleInput]);
+  }, [handleInput, submitAnswer]);
 
   return (
     <div className="flex flex-col space-y-2">
@@ -147,17 +194,21 @@ const Row = ({ state }: RowProps) => {
   return (
     <div className="flex space-x-2">
       {state.map((cell, index) => (
-        <Cell key={index} {...cell} />
+        <Cell key={index} index={index} {...cell} />
       ))}
     </div>
   );
 };
 
-type CellProps = CellState;
+type CellProps = CellState & {
+  index: number;
+};
 
-const Cell = ({ letter = "", status = "not-submitted" }: CellProps) => {
+const Cell = ({ index, letter, status }: CellProps) => {
   const [animateInput, setAnimate] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Trigger input animation when a letter is entered
   useEffect(() => {
     if (letter !== "") {
       setAnimate(true);
@@ -166,21 +217,38 @@ const Cell = ({ letter = "", status = "not-submitted" }: CellProps) => {
     }
   }, [letter]);
 
+  // Trigger flip animation when any status changes (row submission)
+  if (status !== "not-submitted") {
+    setTimeout(() => setIsSubmitted(true), 300 * index);
+  }
+
   return (
     <div
       className={cn(
-        "size-20 font-extrabold flex items-center justify-center text-[3rem] font-sans transition-transform duration-150",
-        letter == "" ? "border-[#D4D6DA]" : "border-[#888A8C]",
-        status == "not-submitted" && "bg-white text-black border-[3px]",
-        status == "incorrect" && "bg-[#787C7E] text-white",
-        status == "wrong-spot" && "bg-[#CAB458] text-white",
-        status == "correct" && "bg-[#6BAA64] text-white",
-        animateInput && "scale-110",
-        // status != "not-submitted" &&
-        //   "transition-all duration-500 [transform-style:preserve-3d] [transform:rotateY(180deg)] transla",
+        "relative size-20 select-none cursor-default transition-all duration-500 [transform-style:preserve-3d]",
+        isSubmitted && "[transform:rotateX(180deg)]",
       )}
     >
-      {letter}
+      <div
+        className={cn(
+          "absolute size-20 font-extrabold flex items-center justify-center text-[3rem] [backface-visibility:hidden]",
+          "bg-white text-black border-[3px]",
+          letter == "" ? "border-[#D4D6DA]" : "border-[#888A8C]",
+          animateInput && "duration-150 scale-110",
+        )}
+      >
+        {letter}
+      </div>
+      <div
+        className={cn(
+          "absolute size-20 font-extrabold flex items-center justify-center text-[3rem] [backface-visibility:hidden] [transform:rotateX(180deg)]",
+          status == "incorrect" && "bg-[#787C7E] text-white",
+          status == "wrong-spot" && "bg-[#CAB458] text-white",
+          status == "correct" && "bg-[#6BAA64] text-white",
+        )}
+      >
+        {letter}
+      </div>
     </div>
   );
 };
