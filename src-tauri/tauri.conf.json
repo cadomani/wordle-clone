@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "Worldle Clone",
-        "width": 800,
-        "height": 600
+        "title": "Wordle Clone",
+        "width": 600,
+        "height": 800,
+        "resizable": false
       }
     ],
     "security": {
