@@ -19,7 +19,7 @@ pub enum LetterState {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct KeyboardKey {
-    pub key: String,
+    pub key: char,
     pub state: LetterState,
 }
 
@@ -37,19 +37,17 @@ impl KeyboardState {
         let initial_state = "QWERTYUIOPASDFGHJKLZXCVBNM"
             .chars()
             .map(|c| KeyboardKey {
-                key: c.to_string(),
+                key: c,
                 state: LetterState::NotPlayed,
             })
             .collect();
 
-        println!("{:?}", initial_state);
-
         Self(initial_state)
     }
 
-    pub fn update(&mut self, key: &str, state: LetterState) {
+    pub fn update(&mut self, key: &char, state: LetterState) {
         for k in self.0.iter_mut() {
-            if k.key == key {
+            if k.key == *key {
                 // If the state is the same or better than the current state, don't update it
                 if k.state >= state {
                     println!("State is the same or better, skipping update for {:?} with inputs {:?} and {:?}", k, key, state);
@@ -57,6 +55,12 @@ impl KeyboardState {
                 }
                 k.state = state;
             }
+        }
+    }
+
+    pub fn reset(&mut self) {
+        for k in self.0.iter_mut() {
+            k.state = LetterState::NotPlayed;
         }
     }
 }
@@ -67,11 +71,15 @@ pub struct Guess {
     pub state: LetterState,
 }
 
+#[derive(Debug, Serialize, Clone)]
+pub struct BoardState(Vec<Guess>);
+
 #[derive(Debug, Clone)]
 pub struct GameEngine {
-    word: String,
+    game_word: String,
     guesses: Vec<String>,
     dictionary: Vec<String>,
+    board_state: BoardState,
     keyboard_state: KeyboardState,
     app_handle: AppHandle,
 }
@@ -79,30 +87,24 @@ pub struct GameEngine {
 impl GameEngine {
     pub fn new(app_handle: AppHandle) -> Self {
         Self {
-            word: Self::choose_game_word(),
+            game_word: Self::choose_game_word(),
             dictionary: Self::load_words("dict-valid.txt"),
             guesses: Vec::new(),
             keyboard_state: KeyboardState::new(),
+            board_state: BoardState(Vec::new()),
             app_handle,
         }
     }
 
-    fn choose_game_word() -> String {
-        let words = Self::load_words("dict-limited.txt");
-        let random_word = words.choose(&mut rand::thread_rng()).unwrap();
-        println!("Random word: {}", random_word);
-
-        random_word.to_string()
-    }
-
-    pub fn reset(&mut self) {
-        self.word = Self::choose_game_word();
+    pub fn new_game(&mut self) {
+        self.game_word = Self::choose_game_word();
         self.guesses.clear();
+        self.keyboard_state.reset();
     }
 
     pub fn guess(&mut self, guess: &str) -> Result<Vec<Guess>, String> {
         // Check if the guess is the same length as the word
-        if guess.len() != self.word.len() {
+        if guess.len() != self.game_word.len() {
             println!("Invalid word length. Guess length: {}", guess.len());
             return Err("invalid word length".to_string());
         }
@@ -118,32 +120,43 @@ impl GameEngine {
         self.guesses.push(guess.to_string());
 
         // Validate guess against each letter in the word
-        let mut guess_result = Vec::new();
-        for (i, c) in self.word.chars().enumerate() {
-            let state = match guess.chars().nth(i) {
-                Some(g) if g == c => LetterState::Correct,
-                Some(g) if self.word.contains(g) => LetterState::WrongSpot,
-                _ => LetterState::Incorrect,
+        for (i, guessed_letter) in guess.chars().enumerate() {
+            // Check if the guessed letter is in the word and assign a state
+            let state = match self.game_word.chars().nth(i) {
+                Some(game_letter) if game_letter == guessed_letter => LetterState::Correct,
+                _ => {
+                    if self.game_word.contains(guessed_letter) {
+                        LetterState::WrongSpot
+                    } else {
+                        LetterState::Incorrect
+                    }
+                }
             };
 
-            guess_result.push(Guess {
-                letter: guess.chars().nth(i).unwrap().to_string(),
+            self.keyboard_state.update(&guessed_letter, state);
+
+            self.board_state.0.push(Guess {
+                letter: guessed_letter.to_string(),
                 state,
             });
         }
 
-        // Update keyboard state
-        for result in guess_result.iter() {
-            self.keyboard_state.update(&result.letter, result.state);
-        }
-
+        // Send the updated keyboard state to the frontend
         self.app_handle
             .emit("keyboard_state", self.keyboard_state.clone())
             .expect("failed to emit keyboard state");
 
         // Return the result of the guess
-        println!("Guess result: {:?}", guess_result);
-        Ok(guess_result)
+        println!("Board state: {:?}", self.board_state);
+        Ok(self.board_state.0.clone())
+    }
+
+    fn choose_game_word() -> String {
+        let words = Self::load_words("dict-limited.txt");
+        let random_word = words.choose(&mut rand::thread_rng()).unwrap();
+        println!("Random word: {}", random_word);
+
+        random_word.to_string()
     }
 
     fn load_words(filename: &str) -> Vec<String> {
