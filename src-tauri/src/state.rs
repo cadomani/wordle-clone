@@ -7,7 +7,7 @@ use rand::seq::SliceRandom;
 
 use serde::Serialize;
 
-#[derive(Debug, Serialize, Clone, PartialEq, Copy)]
+#[derive(Debug, Serialize, Clone, PartialEq, PartialOrd, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum LetterState {
     NotPlayed,
@@ -49,8 +49,9 @@ impl KeyboardState {
     pub fn update(&mut self, key: &str, state: LetterState) {
         for k in self.0.iter_mut() {
             if k.key == key {
-                // If the key is already correct, don't update state
-                if k.state == LetterState::Correct {
+                // If the state is the same or better than the current state, don't update it
+                if k.state >= state {
+                    println!("State is the same or better, skipping update for {:?} with inputs {:?} and {:?}", k, key, state);
                     continue;
                 }
                 k.state = state;
