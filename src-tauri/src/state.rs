@@ -6,6 +6,7 @@ use std::{
 use rand::seq::SliceRandom;
 
 use serde::Serialize;
+use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Serialize, Clone, PartialEq, PartialOrd, Copy)]
 #[serde(rename_all = "camelCase")]
@@ -66,19 +67,23 @@ pub struct Guess {
     pub state: LetterState,
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub struct BoardState {
-    pub word: String,
-    pub dictionary: Vec<String>,
-    pub guesses: Vec<String>,
+#[derive(Debug, Clone)]
+pub struct GameEngine {
+    word: String,
+    guesses: Vec<String>,
+    dictionary: Vec<String>,
+    keyboard_state: KeyboardState,
+    app_handle: AppHandle,
 }
 
-impl BoardState {
-    pub fn new() -> Self {
+impl GameEngine {
+    pub fn new(app_handle: AppHandle) -> Self {
         Self {
             word: Self::choose_game_word(),
             dictionary: Self::load_words("dict-valid.txt"),
             guesses: Vec::new(),
+            keyboard_state: KeyboardState::new(),
+            app_handle,
         }
     }
 
@@ -127,6 +132,15 @@ impl BoardState {
             });
         }
 
+        // Update keyboard state
+        for result in guess_result.iter() {
+            self.keyboard_state.update(&result.letter, result.state);
+        }
+
+        self.app_handle
+            .emit("keyboard_state", self.keyboard_state.clone())
+            .expect("failed to emit keyboard state");
+
         // Return the result of the guess
         println!("Guess result: {:?}", guess_result);
         Ok(guess_result)
@@ -146,11 +160,5 @@ impl BoardState {
         });
 
         words
-    }
-}
-
-impl Default for BoardState {
-    fn default() -> Self {
-        Self::new()
     }
 }
