@@ -75,40 +75,41 @@ pub struct BoardState {
 
 impl BoardState {
     pub fn new() -> Self {
-        let file = File::open("dictionary.txt").expect("File not found");
-        let reader = io::BufReader::new(file);
-
-        let mut words = Vec::new();
-        reader.lines().for_each(|line_result| {
-            if let Ok(line) = line_result {
-                if !line.trim().is_empty() {
-                    words.push(line.to_uppercase());
-                }
-            }
-        });
-
-        let random_word = words.choose(&mut rand::thread_rng()).unwrap();
-
-        println!("Random word: {}", random_word);
         Self {
-            word: random_word.to_string(),
-            dictionary: words,
+            word: Self::choose_game_word(),
+            dictionary: Self::load_words("dict-valid.txt"),
             guesses: Vec::new(),
         }
     }
 
-    pub fn reset(&mut self) {
-        let random_word = self.dictionary.choose(&mut rand::thread_rng()).unwrap();
+    fn choose_game_word() -> String {
+        let words = Self::load_words("dict-limited.txt");
+        let random_word = words.choose(&mut rand::thread_rng()).unwrap();
         println!("Random word: {}", random_word);
-        self.word = random_word.to_string();
+
+        random_word.to_string()
+    }
+
+    pub fn reset(&mut self) {
+        self.word = Self::choose_game_word();
         self.guesses.clear();
     }
 
     pub fn guess(&mut self, guess: &str) -> Result<Vec<Guess>, String> {
-        // Check if guess is in the dictionary
-        if !self.dictionary.contains(&guess.to_uppercase()) {
-            return Err("Invalid guess".to_string());
+        // Check if the guess is the same length as the word
+        if guess.len() != self.word.len() {
+            println!("Invalid word length. Guess length: {}", guess.len());
+            return Err("invalid word length".to_string());
         }
+
+        // Check if guess is in the dictionary
+        println!("Dictionary length: {}", self.dictionary.len());
+        if !self.dictionary.contains(&guess.to_uppercase()) {
+            println!("Guess not in dictionary: {}", guess.to_uppercase());
+            return Err("invalid word".to_string());
+        }
+
+        // Add guess to list of guesses
         self.guesses.push(guess.to_string());
 
         // Validate guess against each letter in the word
@@ -124,9 +125,27 @@ impl BoardState {
                 letter: guess.chars().nth(i).unwrap().to_string(),
                 state,
             });
-            println!("Guess result: {:?}", guess_result);
         }
+
+        // Return the result of the guess
+        println!("Guess result: {:?}", guess_result);
         Ok(guess_result)
+    }
+
+    fn load_words(filename: &str) -> Vec<String> {
+        let file = File::open(filename).expect("File not found");
+        let reader = io::BufReader::new(file);
+
+        let mut words = Vec::new();
+        reader.lines().for_each(|line_result| {
+            if let Ok(line) = line_result {
+                if !line.trim().is_empty() {
+                    words.push(line.to_uppercase());
+                }
+            }
+        });
+
+        words
     }
 }
 
