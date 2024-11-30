@@ -1,11 +1,6 @@
+import { useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { cn } from "../utils/helpers";
-
-type KeyState =
-  | "not-applicable"
-  | "not-played"
-  | "incorrect"
-  | "wrong-spot"
-  | "correct";
 
 const KEYBOARD_LAYOUT = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -13,7 +8,44 @@ const KEYBOARD_LAYOUT = [
   ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
 ];
 
+type KeyState =
+  | "notApplicable"
+  | "notPlayed"
+  | "incorrect"
+  | "wrongSpot"
+  | "correct";
+
+type KeyboardState = {
+  key: string;
+  state: KeyState;
+};
+
 export const Keyboard = () => {
+  const [keyboardState, setKeyboardState] = useState<Map<string, KeyState>>(
+    KEYBOARD_LAYOUT.flat().reduce((acc, letter) => {
+      if (letter === "ENTER" || letter === "BACKSPACE") {
+        acc.set(letter, "notApplicable");
+      } else {
+        acc.set(letter, "notPlayed");
+      }
+      return acc;
+    }, new Map<string, KeyState>()),
+  );
+
+  useEffect(() => {
+    const unlisten = listen<KeyboardState[]>("keyboard_state", (event) =>
+      setTimeout(
+        () =>
+          setKeyboardState(new Map(event.payload.map((k) => [k.key, k.state]))),
+        1500,
+      ),
+    );
+
+    return () => {
+      unlisten.then((u) => u());
+    };
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center space-y-1.5 w-full">
       {KEYBOARD_LAYOUT.map((row, i) => (
@@ -22,7 +54,7 @@ export const Keyboard = () => {
             <KeyboardButton
               key={letter}
               letter={letter}
-              state="incorrect"
+              state={keyboardState.get(letter) ?? "notApplicable"}
               onClick={() => {}}
             />
           ))}
@@ -48,7 +80,7 @@ const KeyboardButton = ({
         letter === "ENTER" && "w-20 text-sm",
         letter === "BACKSPACE" && "w-20 text-2xl",
         state == "incorrect" && "bg-[#787C7E] text-white",
-        state == "wrong-spot" && "bg-[#CAB458] text-white",
+        state == "wrongSpot" && "bg-[#CAB458] text-white",
         state == "correct" && "bg-[#6BAA64] text-white",
       )}
       onClick={onClick}

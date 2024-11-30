@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { cn } from "../utils/helpers";
+import { invoke } from "@tauri-apps/api/core";
 
 type CellState = {
   letter: string;
-  status: "not-submitted" | "incorrect" | "wrong-spot" | "correct";
+  status: "not-submitted" | "invalid" | "incorrect" | "wrong-spot" | "correct";
 };
 
 type RowState = {
@@ -106,9 +107,24 @@ export const Board = () => {
     );
   };
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     // Early return if the active row is not filled
     if (activeCellState.some((cell) => cell.letter === "")) {
+      return;
+    }
+
+    try {
+      await invoke("submit_guess", {
+        guess: activeCellState.map((cell) => cell.letter).join(""),
+      });
+    } catch (e) {
+      setActiveCellState((prev) =>
+        prev.map((cell) => ({
+          ...cell,
+          status: "invalid",
+        })),
+      );
+      console.error(e);
       return;
     }
 
@@ -217,7 +233,7 @@ const Cell = ({ index, letter, status }: CellProps) => {
   }, [letter]);
 
   // Trigger flip animation when any status changes (row submission)
-  if (status !== "not-submitted") {
+  if (status !== "not-submitted" && status !== "invalid") {
     setTimeout(() => setIsSubmitted(true), 300 * index);
   }
 
@@ -233,6 +249,7 @@ const Cell = ({ index, letter, status }: CellProps) => {
           "absolute size-20 font-extrabold flex items-center justify-center text-[3rem] [backface-visibility:hidden]",
           "bg-white text-black border-[3px]",
           letter == "" ? "border-[#D4D6DA]" : "border-[#888A8C]",
+          status == "invalid" && "animate-shake",
           animateInput && "duration-150 scale-110",
         )}
       >
