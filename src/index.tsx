@@ -58,6 +58,23 @@ export default function WordleGame() {
           return;
         }
 
+        // If the last cell is marked as invalid, reset all other invalid cells to notSubmitted
+        if (lastCellState === "invalid") {
+          console.log(
+            "Last cell is marked invalid, resetting all other invalid cells and removing the last cell",
+          );
+          setBoardState((prev) =>
+            prev
+              .slice(0, -1)
+              .map((cell) =>
+                cell.state === "invalid"
+                  ? { ...cell, state: "notSubmitted" }
+                  : cell,
+              ),
+          );
+          return;
+        }
+
         setBoardState((prev) => prev.slice(0, -1));
         break;
       default:
