@@ -7,7 +7,7 @@ import "./index.css";
 const BOARD_SIZE = 30;
 const GUESSED_STATES = ["correct", "incorrect", "wrongSpot"];
 
-export default function App() {
+export default function WordleGame() {
   const [boardState, setBoardState] = useState<BoardState>([]);
 
   const handleInput = (input: string) => {
@@ -28,6 +28,15 @@ export default function App() {
         // Reject if the row is not filled
         if (boardState.length % 5 != 0) {
           console.warn("Row not filled, cannot submit");
+          return;
+        }
+
+        // Reject if the last cell is of a guessed state and the board is full
+        if (
+          boardState.length == BOARD_SIZE &&
+          GUESSED_STATES.includes(lastCellState)
+        ) {
+          console.warn("Last cell is of a guessed state, cannot submit");
           return;
         }
 
@@ -100,6 +109,17 @@ export default function App() {
     }
   };
 
+  const handleNewGame = async () => {
+    try {
+      console.log("Starting a new game");
+      await invoke<BoardState>("new_game");
+      setBoardState([]);
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+  };
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -122,9 +142,16 @@ export default function App() {
 
     return () => controller.abort();
   }, [handleInput, submitAnswer]);
+  console.log("boardState", boardState);
 
   return (
     <main className="flex flex-col items-center justify-center h-screen space-y-2">
+      <div
+        className="absolute left-6 top-6 size-10 p-2 rounded-md bg-gray-300 hover:bg-gray-200 active:bg-gray-100 cursor-pointer shadow-sm select-none text-lg font-bold"
+        onClick={handleNewGame}
+      >
+        NG
+      </div>
       <Board state={boardState} size={BOARD_SIZE} />
       <Keyboard onInput={handleInput} />
     </main>

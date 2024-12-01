@@ -18,3 +18,10 @@ pub fn submit_guess(
     let mut game_engine = game_engine.lock().expect("Failed to lock board state");
     game_engine.guess(&guess.to_string())
 }
+
+#[tauri::command]
+pub fn new_game(game_engine: State<'_, Mutex<GameEngine>>) -> Result<(), String> {
+    let mut game_engine = game_engine.lock().expect("Failed to lock board state");
+    game_engine.new_game();
+    Ok(())
+}

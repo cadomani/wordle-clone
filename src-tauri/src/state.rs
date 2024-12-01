@@ -100,6 +100,7 @@ impl GameEngine {
         self.game_word = Self::choose_game_word();
         self.guesses.clear();
         self.keyboard_state.reset();
+        self.board_state.0.clear();
     }
 
     pub fn guess(&mut self, guess: &str) -> Result<Vec<Guess>, String> {

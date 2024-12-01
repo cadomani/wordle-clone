@@ -12,8 +12,8 @@ export const Board = ({
 }) => (
   <div className="grid grid-cols-5 grid-flow-row gap-1.5">
     {[...state, ...Array(size - state.length).fill(EMPTY_CELL)].map(
-      (cell, index) => (
-        <Cell key={index} index={index % 5} {...cell} />
+      (cell: CellState, index) => (
+        <Cell key={`${index}-${cell.letter}`} index={index % 5} {...cell} />
       ),
     )}
   </div>

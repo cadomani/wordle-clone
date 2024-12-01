@@ -15,7 +15,10 @@ pub fn run() {
             app.manage(Mutex::new(game_engine));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![commands::submit_guess,])
+        .invoke_handler(tauri::generate_handler![
+            commands::submit_guess,
+            commands::new_game
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
