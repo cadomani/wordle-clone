@@ -113,6 +113,11 @@ impl GameEngine {
             return Err("invalid word".to_string());
         }
 
+        // Check if word has already been guessed
+        if self.guesses.contains(&guess.to_string()) {
+            return Err("word already guessed".to_string());
+        }
+
         // Add guess to list of guesses
         self.guesses.push(guess.to_string());
 

@@ -120,16 +120,36 @@ export default function WordleGame() {
 
       setBoardState(updatedBoard);
     } catch (error: unknown) {
-      console.error(error);
-      if (error === "invalid word") {
-        // Update the state of the last five characters to invalid
-        setBoardState((prev) =>
-          prev.map((cell, i) =>
-            i >= prev.length - 5
-              ? { letter: cell.letter, state: "invalid" }
-              : cell,
-          ),
-        );
+      switch (error) {
+        case "word already guessed":
+          console.warn("Word already guessed");
+
+          // Update the state of the last five characters to invalid
+          setBoardState((prev) =>
+            prev.map((cell, i) =>
+              i >= prev.length - 5
+                ? { letter: cell.letter, state: "invalid" }
+                : cell,
+            ),
+          );
+
+          break;
+        case "invalid word":
+          console.warn("Invalid word");
+
+          // Update the state of the last five characters to invalid
+          setBoardState((prev) =>
+            prev.map((cell, i) =>
+              i >= prev.length - 5
+                ? { letter: cell.letter, state: "invalid" }
+                : cell,
+            ),
+          );
+
+          break;
+        default:
+          console.error(error);
+          break;
       }
     }
   };
