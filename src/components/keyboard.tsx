@@ -20,7 +20,7 @@ type KeyboardState = {
   state: KeyState;
 };
 
-export const Keyboard = () => {
+export const Keyboard = ({ onInput }: { onInput: (value: string) => void }) => {
   const [keyboardState, setKeyboardState] = useState<Map<string, KeyState>>(
     KEYBOARD_LAYOUT.flat().reduce((acc, letter) => {
       if (letter === "ENTER" || letter === "BACKSPACE") {
@@ -55,7 +55,7 @@ export const Keyboard = () => {
               key={letter}
               letter={letter}
               state={keyboardState.get(letter) ?? "notApplicable"}
-              onClick={() => {}}
+              onClick={() => onInput(letter)}
             />
           ))}
         </div>
