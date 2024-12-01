@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { cn } from "../utils/helpers";
+import { BackspaceIcon } from "../icons/backspace";
 
 type KeyState =
   | "notApplicable"
@@ -95,7 +96,13 @@ const KeyboardButton = ({
       )}
       onClick={onClick}
     >
-      {letter === "BACKSPACE" ? "⌫" : letter}
+      {letter === "BACKSPACE" ? (
+        <div className="flex items-center justify-center">
+          <BackspaceIcon className="size-6" />
+        </div>
+      ) : (
+        letter
+      )}
     </button>
   );
 };
