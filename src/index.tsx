@@ -3,6 +3,7 @@ import { Board } from "./components/board";
 import { Keyboard } from "./components/keyboard";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
+import { cn } from "./utils/helpers";
 import "./index.css";
 
 const BOARD_SIZE = 30;
@@ -16,6 +17,7 @@ type GameOverEvent = {
 export default function WordleGame() {
   const [boardState, setBoardState] = useState<BoardState>([]);
   const [gameOver, setGameOver] = useState(false);
+  const [message, setMessage] = useState<string | undefined>();
 
   useEffect(() => {
     const unlisten = listen<GameOverEvent>("game_over", (event) => {
@@ -24,8 +26,10 @@ export default function WordleGame() {
       // Display game over message
       if (event.payload.won) {
         console.log("You won!", event.payload.word);
+        showPopup("You win!");
       } else {
         console.log("Game over", event.payload);
+        showPopup("Game over");
       }
     });
 
@@ -151,7 +155,7 @@ export default function WordleGame() {
     } catch (error: unknown) {
       switch (error) {
         case "word already guessed":
-          console.warn("Word already guessed");
+          showPopup("Word already guessed");
 
           // Update the state of the last five characters to invalid
           setBoardState((prev) =>
@@ -164,7 +168,7 @@ export default function WordleGame() {
 
           break;
         case "invalid word":
-          console.warn("Invalid word");
+          showPopup("Not in word list");
 
           // Update the state of the last five characters to invalid
           setBoardState((prev) =>
@@ -181,6 +185,11 @@ export default function WordleGame() {
           break;
       }
     }
+  };
+
+  const showPopup = (message: string) => {
+    setMessage(message);
+    setTimeout(() => setMessage(undefined), 5000);
   };
 
   const handleNewGame = async () => {
@@ -220,25 +229,38 @@ export default function WordleGame() {
   }, [handleInput, submitAnswer]);
 
   return (
-    <main className="flex flex-col items-center justify-center h-screen space-y-2">
-      <div
-        className="absolute left-6 top-6 size-10 p-2 rounded-md bg-gray-300 hover:bg-gray-200 active:bg-gray-100 cursor-pointer shadow-sm select-none text-lg font-bold"
-        onClick={handleNewGame}
-      >
-        NG
-      </div>
-      <Board state={boardState} size={BOARD_SIZE} />
-      <Keyboard onInput={handleInput} />
-    </main>
+    <>
+      <ActionBar newGame={handleNewGame} />
+      <Popup message={message} />
+
+      <main className="flex flex-col items-center justify-center h-screen mt-5 space-y-20">
+        <Board state={boardState} size={BOARD_SIZE} />
+        <Keyboard onInput={handleInput} />
+      </main>
+    </>
   );
 }
 
-// const ActionBar = () => {
-//   return (
-//     <div className="absolute top-1 left-0 px-4 flex space-x-4">
-//       <div className="size-10 p-2 rounded-md bg-gray-300 hover:bg-gray-200 active:bg-gray-100 cursor-pointer shadow-sm select-none text-lg font-bold">
-//         NG
-//       </div>
-//     </div>
-//   );
-// };
+const ActionBar = ({ newGame }: { newGame: () => void }) => {
+  return (
+    <div
+      className="absolute top-5 right-6 w-24 h-8 p-2 rounded-md bg-gray-300 hover:bg-gray-200 active:bg-gray-100 cursor-pointer shadow-sm select-none text-sm font-bold flex items-center justify-center"
+      onClick={newGame}
+    >
+      New Game
+    </div>
+  );
+};
+
+const Popup = ({ message }: { message: string | undefined }) => {
+  return (
+    <div
+      className={cn(
+        "absolute top-8 right-1/2 translate-x-[50%] h-10 w-fit px-3 bg-gray-800 rounded-lg flex items-center justify-center transition-all",
+        !message && "hidden",
+      )}
+    >
+      <p className="text-white font-medium text-sm">{message}</p>
+    </div>
+  );
+};
