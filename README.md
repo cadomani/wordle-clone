@@ -1,7 +1,16 @@
-# Tauri + React + Typescript
+# Wordle Clone
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A clone of the popular word game [Wordle](https://www.nytimes.com/games/wordle/index.html) built with [Tauri](https://v2.tauri.app/).
 
-## Recommended IDE Setup
+## Prerequisites
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Node.js](https://nodejs.org/en/download/)
+- pnpm
+  - Run `corepack enable` after installing Node.js to install and enable pnpm
+
+## Setup
+
+- Clone the repository
+- Run `pnpm install` to install the dependencies
+- Run `pnpm tauri dev` to start the development server
