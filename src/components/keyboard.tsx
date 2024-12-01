@@ -7,7 +7,8 @@ type KeyState =
   | "notPlayed"
   | "incorrect"
   | "wrongSpot"
-  | "correct";
+  | "correct"
+  | "winner";
 
 type KeyboardState = {
   key: string;
@@ -90,7 +91,7 @@ const KeyboardButton = ({
         letter === "BACKSPACE" && "w-20 text-2xl",
         state == "incorrect" && "bg-[#787C7E] text-white",
         state == "wrongSpot" && "bg-[#CAB458] text-white",
-        state == "correct" && "bg-[#6BAA64] text-white",
+        (state == "correct" || state == "winner") && "bg-[#6BAA64] text-white",
       )}
       onClick={onClick}
     >

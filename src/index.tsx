@@ -2,16 +2,45 @@ import { useEffect, useState } from "react";
 import { Board } from "./components/board";
 import { Keyboard } from "./components/keyboard";
 import { invoke } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
 import "./index.css";
-import { emit } from "@tauri-apps/api/event";
 
 const BOARD_SIZE = 30;
-const GUESSED_STATES = ["correct", "incorrect", "wrongSpot"];
+const GUESSED_STATES = ["correct", "incorrect", "wrongSpot", "winner"];
+
+type GameOverEvent = {
+  won: boolean;
+  word: string;
+};
 
 export default function WordleGame() {
   const [boardState, setBoardState] = useState<BoardState>([]);
+  const [gameOver, setGameOver] = useState(false);
+
+  useEffect(() => {
+    const unlisten = listen<GameOverEvent>("game_over", (event) => {
+      setGameOver(true);
+
+      // Display game over message
+      if (event.payload.won) {
+        console.log("You won!", event.payload.word);
+      } else {
+        console.log("Game over", event.payload);
+      }
+    });
+
+    return () => {
+      unlisten.then((u) => u());
+    };
+  }, []);
 
   const handleInput = (input: string) => {
+    // Reject input if the game is over
+    if (gameOver) {
+      console.warn("Game over, cannot accept input");
+      return;
+    }
+
     // Obtain the state of the last cell
     const lastCellState = boardState[boardState.length - 1]?.state;
 
@@ -158,6 +187,7 @@ export default function WordleGame() {
     try {
       console.log("Starting a new game");
       await invoke<BoardState>("new_game");
+      setGameOver(false);
       setBoardState([]);
       emit("reset");
     } catch (e) {

@@ -6,6 +6,7 @@ use std::{
 use rand::seq::SliceRandom;
 
 use serde::Serialize;
+use serde_json::json;
 use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Serialize, Clone, PartialEq, PartialOrd, Copy)]
@@ -15,6 +16,7 @@ pub enum LetterState {
     Incorrect,
     WrongSpot,
     Correct,
+    Winner,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -125,6 +127,7 @@ impl GameEngine {
         for (i, guessed_letter) in guess.chars().enumerate() {
             // Check if the guessed letter is in the word and assign a state
             let state = match self.game_word.chars().nth(i) {
+                Some(_) if guess == self.game_word => LetterState::Winner,
                 Some(game_letter) if game_letter == guessed_letter => LetterState::Correct,
                 _ => {
                     if self.game_word.contains(guessed_letter) {
@@ -148,8 +151,18 @@ impl GameEngine {
             .emit("keyboard_state", self.keyboard_state.clone())
             .expect("failed to emit keyboard state");
 
+        // Check game ending events
+        if guess == self.game_word {
+            self.app_handle
+                .emit("game_over", json!({ "won": true, "word": self.game_word }))
+                .expect("failed to emit game won");
+        } else if self.guesses.len() == 6 {
+            self.app_handle
+                .emit("game_over", json!({ "won": false, "word": self.game_word }))
+                .expect("failed to emit game lost");
+        }
+
         // Return the result of the guess
-        println!("Board state: {:?}", self.board_state);
         Ok(self.board_state.0.clone())
     }
 

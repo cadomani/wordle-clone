@@ -22,6 +22,7 @@ export const Board = ({
 const Cell = ({ index, letter, state }: CellState & { index: number }) => {
   const [animateInput, setAnimate] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isWinner, setIsWinner] = useState(false);
 
   // Trigger input animation when a letter is entered
   useEffect(() => {
@@ -32,16 +33,24 @@ const Cell = ({ index, letter, state }: CellState & { index: number }) => {
     }
   }, [letter]);
 
-  // Trigger flip animation when any status changes (row submission)
-  if (state !== "notSubmitted" && state !== "invalid") {
-    setTimeout(() => setIsSubmitted(true), 300 * index);
-  }
+  useEffect(() => {
+    if (state !== "notSubmitted" && state !== "invalid") {
+      // Trigger flip animation when any status changes (row submission)
+      setTimeout(() => setIsSubmitted(true), 300 * index);
+
+      // Special handling for winner state
+      if (state === "winner") {
+        setTimeout(() => setIsWinner(true), 100 * index + 1600);
+      }
+    }
+  }, [state]);
 
   return (
     <div
       className={cn(
         "relative size-20 select-none cursor-default transition-all duration-500 [transform-style:preserve-3d]",
         isSubmitted && "[transform:rotateX(180deg)]",
+        isWinner && "[transform:rotateX(0deg)] transition-none duration-0",
       )}
     >
       <div
@@ -51,6 +60,7 @@ const Cell = ({ index, letter, state }: CellState & { index: number }) => {
           letter == "" ? "border-[#D4D6DA]" : "border-[#888A8C]",
           state == "invalid" && "animate-shake",
           animateInput && "duration-150 scale-110",
+          isWinner && "bg-[#6BAA64] text-white border-none animate-wave",
         )}
       >
         {letter}
@@ -60,7 +70,8 @@ const Cell = ({ index, letter, state }: CellState & { index: number }) => {
           "absolute size-20 font-extrabold flex items-center justify-center text-[3rem] [backface-visibility:hidden] [transform:rotateX(180deg)]",
           state == "incorrect" && "bg-[#787C7E] text-white",
           state == "wrongSpot" && "bg-[#CAB458] text-white",
-          state == "correct" && "bg-[#6BAA64] text-white",
+          (state == "correct" || state == "winner") &&
+            "bg-[#6BAA64] text-white",
         )}
       >
         {letter}
