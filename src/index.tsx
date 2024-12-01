@@ -90,22 +90,30 @@ export default function WordleGame() {
   };
 
   const submitAnswer = async () => {
-    try {
-      // Find the last five characters and send them to the backend
-      const lastRow = boardState
-        .slice(-5)
-        .map((cell) => cell.letter)
-        .join("");
+    const lastRow = boardState
+      .slice(-5)
+      .map((cell) => cell.letter)
+      .join("");
 
+    try {
       // Submit guess and update the board state
       const updatedBoard = await invoke<BoardState>("submit_guess", {
         guess: lastRow,
       });
 
       setBoardState(updatedBoard);
-    } catch (e) {
-      console.error(e);
-      return;
+    } catch (error: unknown) {
+      console.error(error);
+      if (error === "invalid word") {
+        // Update the state of the last five characters to invalid
+        setBoardState((prev) =>
+          prev.map((cell, i) =>
+            i >= prev.length - 5
+              ? { letter: cell.letter, state: "invalid" }
+              : cell,
+          ),
+        );
+      }
     }
   };
 
@@ -143,7 +151,6 @@ export default function WordleGame() {
 
     return () => controller.abort();
   }, [handleInput, submitAnswer]);
-  console.log("boardState", boardState);
 
   return (
     <main className="flex flex-col items-center justify-center h-screen space-y-2">

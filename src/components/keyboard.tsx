@@ -85,7 +85,7 @@ const KeyboardButton = ({
   return (
     <button
       className={cn(
-        "w-12 h-16 p-2 text-xl font-bold text-black bg-[#D4D6DA] rounded-lg",
+        "w-12 h-16 p-2 text-xl font-bold text-black bg-[#D4D6DA] rounded-lg transition-colors duration-300",
         letter === "ENTER" && "w-20 text-sm",
         letter === "BACKSPACE" && "w-20 text-2xl",
         state == "incorrect" && "bg-[#787C7E] text-white",

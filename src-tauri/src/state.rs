@@ -50,7 +50,6 @@ impl KeyboardState {
             if k.key == *key {
                 // If the state is the same or better than the current state, don't update it
                 if k.state >= state {
-                    println!("State is the same or better, skipping update for {:?} with inputs {:?} and {:?}", k, key, state);
                     continue;
                 }
                 k.state = state;
@@ -106,14 +105,11 @@ impl GameEngine {
     pub fn guess(&mut self, guess: &str) -> Result<Vec<Guess>, String> {
         // Check if the guess is the same length as the word
         if guess.len() != self.game_word.len() {
-            println!("Invalid word length. Guess length: {}", guess.len());
             return Err("invalid word length".to_string());
         }
 
         // Check if guess is in the dictionary
-        println!("Dictionary length: {}", self.dictionary.len());
         if !self.dictionary.contains(&guess.to_uppercase()) {
-            println!("Guess not in dictionary: {}", guess.to_uppercase());
             return Err("invalid word".to_string());
         }
 
