@@ -169,7 +169,7 @@ impl GameEngine {
     fn choose_game_word() -> String {
         let words = Self::load_words("dict-limited.txt");
         let random_word = words.choose(&mut rand::thread_rng()).unwrap();
-        println!("Random word: {}", random_word);
+        println!("Game word: {}", random_word);
 
         random_word.to_string()
     }

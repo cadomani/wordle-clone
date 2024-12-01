@@ -25,10 +25,8 @@ export default function WordleGame() {
 
       // Display game over message
       if (event.payload.won) {
-        console.log("You won!", event.payload.word);
         showPopup("You win!");
       } else {
-        console.log("Game over", event.payload);
         showPopup("Game over");
       }
     });
@@ -51,8 +49,6 @@ export default function WordleGame() {
     // Select action based on input
     switch (input) {
       case "ENTER":
-        console.log("Enter pressed");
-
         // Reject if the board is empty
         if (boardState.length === 0) {
           console.warn("Board empty, cannot submit");
@@ -77,8 +73,6 @@ export default function WordleGame() {
         submitAnswer();
         break;
       case "BACKSPACE":
-        console.log("Backspace pressed");
-
         // Reject if the board is empty
         if (boardState.length === 0) {
           console.warn("Board empty, cannot remove more characters");
@@ -111,8 +105,6 @@ export default function WordleGame() {
         setBoardState((prev) => prev.slice(0, -1));
         break;
       default:
-        console.log(`Character ${input} pressed`);
-
         // Reject if the board is already full
         if (boardState.length === BOARD_SIZE) {
           console.warn("Board full, cannot add more characters");
@@ -194,7 +186,6 @@ export default function WordleGame() {
 
   const handleNewGame = async () => {
     try {
-      console.log("Starting a new game");
       await invoke<BoardState>("new_game");
       setGameOver(false);
       setBoardState([]);
