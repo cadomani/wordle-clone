@@ -2,12 +2,6 @@ import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { cn } from "../utils/helpers";
 
-const KEYBOARD_LAYOUT = [
-  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-  ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
-];
-
 type KeyState =
   | "notApplicable"
   | "notPlayed"
@@ -20,20 +14,30 @@ type KeyboardState = {
   state: KeyState;
 };
 
-export const Keyboard = ({ onInput }: { onInput: (value: string) => void }) => {
-  const [keyboardState, setKeyboardState] = useState<Map<string, KeyState>>(
-    KEYBOARD_LAYOUT.flat().reduce((acc, letter) => {
-      if (letter === "ENTER" || letter === "BACKSPACE") {
-        acc.set(letter, "notApplicable");
-      } else {
-        acc.set(letter, "notPlayed");
-      }
-      return acc;
-    }, new Map<string, KeyState>()),
-  );
+const KEYBOARD_LAYOUT = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACKSPACE"],
+];
+
+const defaultKeyboardState = KEYBOARD_LAYOUT.flat().reduce((acc, letter) => {
+  if (letter === "ENTER" || letter === "BACKSPACE") {
+    acc.set(letter, "notApplicable");
+  } else {
+    acc.set(letter, "notPlayed");
+  }
+  return acc;
+}, new Map<string, KeyState>());
+
+type KeyboardProps = {
+  onInput: (value: string) => void;
+};
+
+export const Keyboard = ({ onInput }: KeyboardProps) => {
+  const [keyboardState, setKeyboardState] = useState(defaultKeyboardState);
 
   useEffect(() => {
-    const unlisten = listen<KeyboardState[]>("keyboard_state", (event) =>
+    const updateUnlisten = listen<KeyboardState[]>("keyboard_state", (event) =>
       setTimeout(
         () =>
           setKeyboardState(new Map(event.payload.map((k) => [k.key, k.state]))),
@@ -41,8 +45,13 @@ export const Keyboard = ({ onInput }: { onInput: (value: string) => void }) => {
       ),
     );
 
+    const resetUnlisten = listen("reset", () =>
+      setKeyboardState(defaultKeyboardState),
+    );
+
     return () => {
-      unlisten.then((u) => u());
+      updateUnlisten.then((u) => u());
+      resetUnlisten.then((u) => u());
     };
   }, []);
 

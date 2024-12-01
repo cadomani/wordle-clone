@@ -3,6 +3,7 @@ import { Board } from "./components/board";
 import { Keyboard } from "./components/keyboard";
 import { invoke } from "@tauri-apps/api/core";
 import "./index.css";
+import { emit } from "@tauri-apps/api/event";
 
 const BOARD_SIZE = 30;
 const GUESSED_STATES = ["correct", "incorrect", "wrongSpot"];
@@ -101,7 +102,6 @@ export default function WordleGame() {
         guess: lastRow,
       });
 
-      console.log(updatedBoard);
       setBoardState(updatedBoard);
     } catch (e) {
       console.error(e);
@@ -114,6 +114,7 @@ export default function WordleGame() {
       console.log("Starting a new game");
       await invoke<BoardState>("new_game");
       setBoardState([]);
+      emit("reset");
     } catch (e) {
       console.error(e);
       return;
@@ -157,3 +158,13 @@ export default function WordleGame() {
     </main>
   );
 }
+
+// const ActionBar = () => {
+//   return (
+//     <div className="absolute top-1 left-0 px-4 flex space-x-4">
+//       <div className="size-10 p-2 rounded-md bg-gray-300 hover:bg-gray-200 active:bg-gray-100 cursor-pointer shadow-sm select-none text-lg font-bold">
+//         NG
+//       </div>
+//     </div>
+//   );
+// };
