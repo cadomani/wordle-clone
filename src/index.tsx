@@ -224,7 +224,7 @@ export default function WordleGame() {
       <ActionBar newGame={handleNewGame} />
       <Popup message={message} />
 
-      <main className="flex flex-col items-center justify-center h-screen mt-5 space-y-20">
+      <main className="flex flex-col items-center justify-center h-screen space-y-20 overflow-hidden pt-5">
         <Board state={boardState} size={BOARD_SIZE} />
         <Keyboard onInput={handleInput} />
       </main>
