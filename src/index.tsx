@@ -132,15 +132,22 @@ export default function WordleGame() {
   };
 
   const submitAnswer = async () => {
-    const lastRow = boardState
-      .slice(-5)
+    // Construct the guess from any non-submitted cells
+    const guess = boardState
+      .filter((cell) => cell.state === "notSubmitted")
       .map((cell) => cell.letter)
       .join("");
+
+    // Reject if the guess contains less than 5 characters
+    if (guess.length < 5) {
+      console.warn("Guess contains less than 5 characters");
+      return;
+    }
 
     try {
       // Submit guess and update the board state
       const updatedBoard = await invoke<BoardState>("submit_guess", {
-        guess: lastRow,
+        guess,
       });
 
       setBoardState(updatedBoard);
@@ -149,30 +156,29 @@ export default function WordleGame() {
         case "word already guessed":
           showPopup("Word already guessed");
 
-          // Update the state of the last five characters to invalid
+          // Update any non-submitted cells to invalid
           setBoardState((prev) =>
-            prev.map((cell, i) =>
-              i >= prev.length - 5
-                ? { letter: cell.letter, state: "invalid" }
-                : cell,
-            ),
+            prev.map((cell) => ({
+              ...cell,
+              state: cell.state == "notSubmitted" ? "invalid" : cell.state,
+            })),
           );
 
           break;
         case "invalid word":
           showPopup("Not in word list");
 
-          // Update the state of the last five characters to invalid
+          // Update any non-submitted cells to invalid
           setBoardState((prev) =>
-            prev.map((cell, i) =>
-              i >= prev.length - 5
-                ? { letter: cell.letter, state: "invalid" }
-                : cell,
-            ),
+            prev.map((cell) => ({
+              ...cell,
+              state: cell.state == "notSubmitted" ? "invalid" : cell.state,
+            })),
           );
 
           break;
         default:
+          showPopup("An error occurred");
           console.error(error);
           break;
       }
